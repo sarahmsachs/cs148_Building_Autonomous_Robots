@@ -68,10 +68,15 @@ function init() {
     // set gravity
     gravity = 0.01;
 
+
+    //Sarah inserts: make inital cur velocity zero
+    curVelocity = 0;
+    currAccel = 0;
+
     // set method of numerical integration of dynamics
-    numerical_integrator = "euler";  // REQUIRED
+    //numerical_integrator = "euler";  // REQUIRED
     //numerical_integrator = "verlet";  // OPTIONAL
-    //numerical_integrator = "velocity verlet";  // REQUIRED
+    numerical_integrator = "velocity verlet";  // REQUIRED
     //numerical_integrator = "runge-kutta";  // OPTIONAL
 
     init_threejs_scene();
@@ -120,13 +125,18 @@ function animate() {
     } 
     else {
         // euler integration
-
         numerical_integrator = "euler";
+        currAccel = -gravity*Math.sin(pendulum.angle)/pendulum.length+pendulum.control/(pendulum.mass*length^2);
+        curVelocity = curVelocity+currAccel*dt;
+        pendulum.angle = pendulum.angle+curVelocity*dt;
+        t = t +dt;
+
+       // pendulum.angle += Math.PI/160
     }
 
     // set the current state/angle of the pendulum
     pendulum.geom.rotation.y = pendulum.angle;  // threejs cylinders have their axes along the y-axis
-    pendulum.angle += Math.PI/160;  // REMOVE THIS!!! just to show how angle is ued
+    //pendulum.angle += Math.PI/160;  // REMOVE THIS!!! just to show how angle is ued
 
     // don't forget to advance time
 
