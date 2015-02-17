@@ -58,25 +58,29 @@ function init() {
     pendulum.desired_dot = 0;
 
     // initialize pendulum PID servo gains
-    pendulum.servo = {kp:0.0, kd:0.0, ki:0.0};
+    //pendulum.servo = {kp:0.0, kd:0.0, ki:0.0};
+    pendulum.servo = {kp:1, kd:1, ki:1};
     accumulated_error = 0;
 
     // set time and timestep 
     t = 0;
-    dt = 1.0;
+   //dt = 1.0;
+    dt = .05;
     
     // set gravity
-    gravity = 0.01;
+   //gravity = 0.01;
+   gravity =9.81;
+   //gravity = 1;
 
 
     //Sarah inserts: make inital cur velocity zero
-    curVelocity = 0;
-    a_t = 0;
+    //curVelocity = 0;
+    //a_t = 0;
 
     // set method of numerical integration of dynamics
-    numerical_integrator = "euler";  // REQUIRED
+   //numerical_integrator = "euler";  // REQUIRED
     //numerical_integrator = "verlet";  // OPTIONAL
-    //numerical_integrator = "velocity verlet";  // REQUIRED
+    numerical_integrator = "velocity verlet";  // REQUIRED
     //numerical_integrator = "runge-kutta";  // OPTIONAL
 
     init_threejs_scene();
@@ -109,21 +113,34 @@ function animate() {
     if ( keyboard.pressed("q") )
         pendulum.desired += -0.05;
 
+    error = pendulum.desired - pendulum.angle;
     // key input to zero controls and let pendulum swing
-    if ( keyboard.pressed("s") )
+    if ( keyboard.pressed("s") ){
         pendulum.control = 0;
+        accumulated_error = 0;
+    }
 
-    //no matter what, the acceleration equation is independent of integration method, so I calculate before I consider which method of integration I am using
-    //currAccel = -gravity*Math.sin(pendulum.angle)/pendulum.length+pendulum.control/(pendulum.mass*length^2);
-    a_t = system_acceleration;
+    else {
+        //if (error > 0){
+            accumulated_error = accumulated_error + error;
+            pendulum.control = pendulum.servo.kp*error+pendulum.servo.ki*accumulated_error+pendulum.servo.kd*pendulum.angle_dot;
+         //}
+    }
+
+    
+    
+   
+   
+    a_t = system_acceleration(pendulum.angle, pendulum.angle_dot, t);
     
     // update pendulum state with integrator using current acceleration
     if (numerical_integrator === "verlet") {
         // basic verlet integration
     }
     else if (numerical_integrator === "velocity verlet") {
-        //currAccel = -gravity*Math.sin(pendulum.angle)/pendulum.length+pendulum.control/(pendulum.mass*length^2);
-        nextAngle = pendulum.angle + curVelocity*dt + .5*a_t*(dt^2);
+        pendulum.angle = pendulum.angle + pendulum.angle_dot*dt + 1/2*a_t*(dt*dt);
+        nextAccel = -gravity*Math.sin(pendulum.angle)/pendulum.length+pendulum.control/(pendulum.mass*pendulum.length*pendulum.length);
+        pendulum.angle_dot = pendulum.angle_dot + (1/2)*(a_t+nextAccel)*dt;
         // velocity version of verlet integration
     }
     else if (numerical_integrator === "runge-kutta") {
@@ -131,22 +148,20 @@ function animate() {
     } 
     else {
         // euler integration
-        //numerical_integrator = "euler";
-        a_t = system_acceleration(pendulum.angle, curVelocity, t);
-        curVelocity = curVelocity+a_t*dt;
-        pendulum.angle = pendulum.angle+curVelocity*dt;
-        t = t +dt;
-
-       // pendulum.angle += Math.PI/160
+        numerical_integrator = "euler";
+        pendulum.angle_dot = pendulum.angle_dot+a_t*dt;
+        pendulum.angle = pendulum.angle+pendulum.angle_dot*dt;
     }
+    // //update time
+    t = t +dt;
 
     // set the current state/angle of the pendulum
     pendulum.geom.rotation.y = pendulum.angle;  // threejs cylinders have their axes along the y-axis
     //pendulum.angle += Math.PI/160;  // REMOVE THIS!!! just to show how angle is ued
 
-    // don't forget to advance time
 
     /* output simulator variables
+    */
     textbar.innerHTML = 
         " t = " + t.toFixed(2) + 
         " dt = " + dt.toFixed(2) + 
@@ -158,6 +173,7 @@ function animate() {
         " l = " + pendulum.length.toFixed(2) +
         " integrator = " + numerical_integrator
     ;
+    /*
     */
 
     // threejs rendering update
@@ -166,8 +182,8 @@ function animate() {
 }
 
 function system_acceleration(x_current,v_current,t_current) {
-    a_t = -gravity*Math.sin(x_current)/pendulum.length+pendulum.control/(pendulum.mass*length^2);
-    return a_t;
+     return -gravity*Math.sin(x_current)/pendulum.length+pendulum.control/(pendulum.mass*pendulum.length*pendulum.length);
+    
     // return a_t for current pendulum state
 }
 
