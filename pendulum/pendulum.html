@@ -54,35 +54,24 @@ function init() {
 
     // initialize pendulum controls
     pendulum.control = 0;
-    pendulum.desired = -Math.PI/2.5;
+    pendulum.desired = Math.PI*2.5;
     pendulum.desired_dot = 0;
 
-    // initialize pendulum PID servo gains
-    //pendulum.servo = {kp:0.0, kd:0.0, ki:0.0};
-    pendulum.servo = {kp:1, kd:1, ki:1};
+    pendulum.servo = {kp:105, kd:19, ki:2};
     accumulated_error = 0;
 
     // set time and timestep 
     t = 0;
-   //dt = 1.0;
     dt = .05;
-    
+    error = 0;
     // set gravity
-   //gravity = 0.01;
    gravity =9.81;
-   //gravity = 1;
-
-
-    //Sarah inserts: make inital cur velocity zero
-    //curVelocity = 0;
-    //a_t = 0;
 
     // set method of numerical integration of dynamics
    //numerical_integrator = "euler";  // REQUIRED
     //numerical_integrator = "verlet";  // OPTIONAL
     numerical_integrator = "velocity verlet";  // REQUIRED
     //numerical_integrator = "runge-kutta";  // OPTIONAL
-
     init_threejs_scene();
 
 }
@@ -112,8 +101,8 @@ function animate() {
         pendulum.desired += 0.05;
     if ( keyboard.pressed("q") )
         pendulum.desired += -0.05;
-
-    error = pendulum.desired - pendulum.angle;
+    lastError = error;
+    error = pendulum.desired-pendulum.angle;
     // key input to zero controls and let pendulum swing
     if ( keyboard.pressed("s") ){
         pendulum.control = 0;
@@ -121,17 +110,11 @@ function animate() {
     }
 
     else {
-        //if (error > 0){
             accumulated_error = accumulated_error + error;
-            pendulum.control = pendulum.servo.kp*error+pendulum.servo.ki*accumulated_error+pendulum.servo.kd*pendulum.angle_dot;
-         //}
+            pendulum.control = pendulum.servo.kp*error+pendulum.servo.ki*accumulated_error*dt+pendulum.servo.kd*(error - lastError)/dt;
     }
-
-    
-    
    
-   
-    a_t = system_acceleration(pendulum.angle, pendulum.angle_dot, t);
+    a_t = system_acceleration(pendulum.angle);
     
     // update pendulum state with integrator using current acceleration
     if (numerical_integrator === "verlet") {
@@ -157,7 +140,6 @@ function animate() {
 
     // set the current state/angle of the pendulum
     pendulum.geom.rotation.y = pendulum.angle;  // threejs cylinders have their axes along the y-axis
-    //pendulum.angle += Math.PI/160;  // REMOVE THIS!!! just to show how angle is ued
 
 
     /* output simulator variables
