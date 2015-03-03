@@ -3,9 +3,11 @@
  Assignment 1: CHECK
  comment: good work
  
- Assignment 2: PENDING
+ Assignment 2: DUE
+ error: euler integrator is incorrect
+ comment: why is euler integrator stable?
  
- Assignment 3: PENDING
+ Assignment 3: CANCELLED
  
  Assignment 4: PENDING
  
