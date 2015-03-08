@@ -68,9 +68,9 @@ function init() {
    gravity =9.81;
 
     // set method of numerical integration of dynamics
-   //numerical_integrator = "euler";  // REQUIRED
+    numerical_integrator = "euler";  // REQUIRED
     //numerical_integrator = "verlet";  // OPTIONAL
-    numerical_integrator = "velocity verlet";  // REQUIRED
+    //numerical_integrator = "velocity verlet";  // REQUIRED
     //numerical_integrator = "runge-kutta";  // OPTIONAL
     init_threejs_scene();
 
@@ -132,8 +132,10 @@ function animate() {
     else {
         // euler integration
         numerical_integrator = "euler";
-        pendulum.angle_dot = pendulum.angle_dot+a_t*dt;
+        //pendulum.angle_dot = pendulum.angle_dot+a_t*dt;
         pendulum.angle = pendulum.angle+pendulum.angle_dot*dt;
+        pendulum.angle_dot = pendulum.angle_dot+a_t*dt;
+
     }
     // //update time
     t = t +dt;
