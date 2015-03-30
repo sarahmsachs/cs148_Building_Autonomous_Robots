@@ -36,19 +36,46 @@ function traverse_forward_kinematics_link(robot, link){
 	for (x in link.children){ //I call on the links children joints to traverse
 		traverse_forward_kinematics_joint(robot, robot.joints[link.children[x]]);
 	}
-	compute_and_draw_heading(link);
+	var tempmat = matrix_2Darray_to_threejs(link.xform);
+    simpleApplyMatrix(link.geom,tempmat);
 }
 function traverse_forward_kinematics_joint(robot, joint){
 	order.push(joint); //for debugging puroses
 	joint.origin.xform = getXform(joint);
+	var origQuat = quaternion_normalize(quaternion_from_axisangle(joint.axis, joint.angle));
+	var rotMatrx = quaternion_to_rotation_matrix(origQuat);
+	joint.origin.xform = matrix_multiply(getXform(joint), rotMatrx);
 	joint.xform = matrix_multiply(joint.origin.xform, generate_identity());
+	var tempmat = matrix_2Darray_to_threejs(joint.xform);
+    simpleApplyMatrix(joint.geom,tempmat);
 	compute_and_draw_heading(joint);
 	traverse_forward_kinematics_link(robot, robot.links[joint.child]);//I traverse on child
-
 }
+
 function compute_and_draw_heading(object){
-	var tempmat = matrix_2Darray_to_threejs(object.xform);
-    simpleApplyMatrix(object.geom,tempmat);
+	heading_local = [[1],[0],[0],[1]];
+	lateral_local = [[0],[0],[1],[1]];
+	var headingProduct = matrix_multiply(robot.links[robot.base].xform, heading_local);
+	var lateralProduct = matrix_multiply(robot.links[robot.base].xform, lateral_local);
+	robot_heading = generate_translation_matrix(headingProduct[0], headingProduct[1], headingProduct[2]);
+	robot_lateral = generate_translation_matrix(lateralProduct[0], lateralProduct[1], lateralProduct[2]);
+	var heading_mat = matrix_2Darray_to_threejs(robot_heading);
+	var lateral_mat = matrix_2Darray_to_threejs(robot_lateral);
+	if (typeof heading_geom === 'undefined') {
+		var temp_geom = new THREE.CubeGeometry(0.3, 0.3, 0.3);
+        var temp_material = new THREE.MeshBasicMaterial( {color: 0x00ffff} )
+        heading_geom = new THREE.Mesh(temp_geom, temp_material);
+        scene.add(heading_geom);
+        }
+    if (typeof lateral_geom === 'undefined') {
+    	var temp_geom = new THREE.CubeGeometry(0.3, 0.3, 0.3);
+    	var temp_material = new THREE.MeshBasicMaterial( {color: 0x008888} )
+    	lateral_geom = new THREE.Mesh(temp_geom, temp_material);
+    	scene.add(lateral_geom);
+        }
+
+    simpleApplyMatrix(heading_geom,heading_mat);
+    simpleApplyMatrix(lateral_geom,lateral_mat);
 }
 
 function getXform(obj){

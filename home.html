@@ -36,21 +36,21 @@
      <!-- CS148: change this script pointer to change the robot definition -->
 
 <!-- <script src="robots/robot_urdf_example.js"></script>  -->
-<script src="robots/robot_crawler.js"></script> 
+<!-- <script src="robots/robot_crawler.js"></script>  -->
 
-<!-- <script src="robots/robot_br2.js"></script>   -->
+<script src="robots/robot_br2.js"></script>  
 
 <!-- 3jsbot includes -->
 <script src="3jsbot.js"></script> 
 
 <script src="3jsbot_forward_kinematics.js"></script> 
-<!-- <script src="3jsbot_controls.js"></script> 
+<script src="3jsbot_controls.js"></script> 
 <script src="3jsbot_pd_control.js"></script> 
 <script src="3jsbot_inverse_kinematics.js"></script> 
 <script src="3jsbot_potential_field.js"></script> 
-<script src="3jsbot_rrt_connect.js"></script>  -->
+<script src="3jsbot_rrt_connect.js"></script> 
 <script src="3jsbot_matrix.js"></script> 
-<!-- <script src="3jsbot_quaternion.js"></script>  -->
+<script src="3jsbot_quaternion.js"></script> 
 
 <script src="3jsbot_threejs.js"></script> 
 <script src="3jsbot_userinput.js"></script> 
@@ -180,7 +180,13 @@ function init_robot_joints() {
 
         // give the joint its name as an id
         robot.joints[x].name = x;
-  
+        //I added this!
+        robot.joints[x].angle = 0; //added in assignment 5
+        robot.joints[x].control = 0;
+        robot.joints[x].servo = {p_desired:0, gains:0};
+        // robot.joints[x].servo.p_desired = 0;
+        // robot.joints[x].servo.gains = 0; //GUESSED, UNSURE STILL
+
         // CONSTRUCT KINEMATIC HIERARCHY
 
         robot.links[robot.joints[x].child].parent = x;
@@ -344,7 +350,7 @@ function my_animate() {
     // ROBOT DYNAMICS 
 
     // apply robot controls to robot configuration (assuming pure kinematics for now)
-    //robot_apply_controls();
+    robot_apply_controls();
 
     // DRAW ROBOT 
 
@@ -359,11 +365,11 @@ function my_animate() {
     // UPDATE AUTONOMOUS CONTROLS 
 
     // proportional-derivative control 
-    /*
+    //uncommented this area
     if (update_pd)
         robot_pd_control();
     update_pd = false;
-    */
+    
 
     // inverse kinematics
     //robot_inverse_kinematics(ik_target, "forearm_right_yaw", ik_local);

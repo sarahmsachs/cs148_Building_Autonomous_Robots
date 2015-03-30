@@ -18,11 +18,11 @@ generate_rotation_matrix_Z
 
 function matrix_multiply(matrix1, matrix2){
 	var finalMatrix = []
-    for (var i = 0; i < matrix1[0].length; i++) {
+    for (var i = 0; i < matrix1.length; i++) {
         finalMatrix[i] = [];
-        for (var j=0; j<matrix1.length; j++){
+        for (var j=0; j<matrix2[0].length; j++){
         	var dotProduct = 0;
-        	for (var k = 0; k<matrix2[0].length; k++){
+        	for (var k = 0; k<matrix2.length; k++){
         		dotProduct+=matrix1[i][k]*matrix2[k][j];
         	}
         finalMatrix[i].push(dotProduct);
@@ -30,6 +30,7 @@ function matrix_multiply(matrix1, matrix2){
     }
     return finalMatrix;
 }
+
 
 function matrix_transpose(matrix){
 	var finalMatrix= [];
