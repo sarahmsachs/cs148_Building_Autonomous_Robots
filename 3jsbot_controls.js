@@ -27,6 +27,8 @@ function robot_apply_controls() {
     robot.control.rpy = [0,0,0];
     for (x in robot.joints) {
     	robot.joints[x].angle += robot.joints[x].control; //apply to angle
+        //ADDED FOR REGRADE
+        robot.joints[x].control=0;
     }
  
 }

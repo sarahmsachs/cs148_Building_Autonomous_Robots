@@ -82,20 +82,20 @@ function user_input() {
         robot.control.xyz[0] += -0.1 * (robot_lateral[0][0]-robot.origin.xyz[0]);
     }
 
-    /* CS148: user input for executing inverse kinematics iterations 
+     // CS148: user input for executing inverse kinematics iterations 
     if ( keyboard.pressed("p") )
         update_ik = true;
 
-    /* CS148: user input for executing proportional derivative servo */
+     // CS148: user input for executing proportional derivative servo 
     if ( keyboard.pressed("o") )
         update_pd = true;
 
-    /* CS148: user input for moving IK target up/down */
+     // CS148: user input for moving IK target up/down 
     if ( keyboard.pressed("r") )   // ik target up
         ik_target[1][0] += 0.01;
     if ( keyboard.pressed("f") )  // ik target down
         ik_target[1][0] -= 0.01;
-}
+} 
 
 
 /* CS148: user input for joint selection */

@@ -119,7 +119,7 @@ function my_init() {
     ];
 
     moveInt = 0;
-
+    numberIterations = 0;
     // CS148: INITIAL GETTING FAMILIAR CODE  (END HERE)
 
 }
@@ -214,7 +214,7 @@ function init_robot_joints() {
 function my_animate() {
 
     // CS148: INITIAL GETTING FAMILIAR CODE  (START HERE)
-
+    numberIterations = numberIterations +1;
     // keyboard is threejs helper for reading keyboard state
     if (keyboard.pressed("x")) {   
         textbar.innerHTML = "moving up";  // make the pieces move up
@@ -353,7 +353,7 @@ function my_animate() {
     robot_apply_controls();
 
     // DRAW ROBOT 
-
+    
     // forward kinematics over robot links
     robot_forward_kinematics();
 
@@ -372,7 +372,8 @@ function my_animate() {
     
 
     // inverse kinematics
-    //robot_inverse_kinematics(ik_target, "forearm_right_yaw", ik_local);
+    ik_local = [[0],[0], [0.5], [1]]
+    robot_inverse_kinematics(ik_target, "forearm_right_yaw", ik_local);
 
     // configuration space motion planning
     //robot_rrt_connect(q_desired);
