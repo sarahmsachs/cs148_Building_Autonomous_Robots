@@ -13,9 +13,12 @@
  Assignment 4: CHECK
  comment: good work
  
- Assignment 5: PENDING
+ Assignment 5: DUE
+ error: base controller is unstable and does not properly respond to user input
+ error: joint PD controller incorrect
  
- Assignment 6: PENDING
+ Assignment 6: DUE
+ error: means to execute Jacobian transpose IK unspecified
  
  Assignment 7: PENDING
  
