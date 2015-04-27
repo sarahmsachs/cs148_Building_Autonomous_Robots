@@ -49,6 +49,16 @@
 <script src="3jsbot_inverse_kinematics.js"></script> 
 <script src="3jsbot_potential_field.js"></script> 
 <script src="3jsbot_rrt_connect.js"></script> 
+
+
+
+<!-- <script src="worlds/world_empty.js"></script>
+<script src="worlds/world_random.js"></script>
+<script src="worlds/world_local_minima.js"></script> -->
+<script src="worlds/world_s.js"></script>
+
+<script src="3jsbot_collision.js"></script>
+<!-- I added the collision and world part above part bc its in the handout -->
 <script src="3jsbot_matrix.js"></script> 
 <script src="3jsbot_quaternion.js"></script> 
 
@@ -129,6 +139,9 @@ function init_robot() {
 
     // ASSUME: robot kinematics are described separate js file (eg., "robot_urdf_example.js")
 
+    // initialize flags for executing planner
+    generating_motion_plan = false;
+    generate_motion_plan = false;
     // initialize and create threejs mesh objects for robot links
     init_robot_links();
 
@@ -137,6 +150,7 @@ function init_robot() {
 
     // initialize inverse kinematics target location 
     ik_target = [[0],[0.8],[1.0],[1]];
+    robot_set_planning_scene();
 
 }
 
@@ -215,6 +229,23 @@ function my_animate() {
 
     // CS148: INITIAL GETTING FAMILIAR CODE  (START HERE)
     numberIterations = numberIterations +1;
+
+    // configuration space motion planning
+    if ((generate_motion_plan) && (!generating_motion_plan)) {
+        robot_rrt_planner_init();
+        generating_motion_plan = true;
+        generate_motion_plan = false;
+    }
+    if (generating_motion_plan) {
+        //robot_rrt_connect(q_desired);
+        rrt_result = robot_rrt_planner_iterate();
+        if (rrt_result === "reached") {
+            //alert("home: reached");
+            generating_motion_plan = false;
+        }
+    }
+     // show if robot is currently in collision
+    robot_iscollision();
     // keyboard is threejs helper for reading keyboard state
     if (keyboard.pressed("x")) {   
         textbar.innerHTML = "moving up";  // make the pieces move up

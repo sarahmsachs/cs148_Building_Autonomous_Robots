@@ -96,25 +96,31 @@ function jacobianSubI(global_ef_pos, joint){
 }
 
 function psuedoInverse(jacobian){
-	var m = jacobian.length;
-	var n = jacobian[0].length;
-	var a = jacobian;
-	var at = matrix_transpose(jacobian);
-	if (m>n){
-		var ata = matrix_multiply(at, a);
-		var atai = numeric.inv(ata);
-		return matrix_multiply(atai, at);
+	transposeJacobian = false; //this is to be set according to how you want to take your inverse
+
+	if (transposeJacobian==false){
+		var m = jacobian.length;
+		var n = jacobian[0].length;
+		var a = jacobian;
+		var at = matrix_transpose(jacobian);
+		if (m>n){
+			var ata = matrix_multiply(at, a);
+			var atai = numeric.inv(ata);
+			return matrix_multiply(atai, at);
+		}
+		else if(n>m){
+			var aat = matrix_multiply(a,at);
+			var aati = numeric.inv(aat);
+			return matrix_multiply(at, aati);
+		}
+		else{
+			return numeric.inv(jacobian);
+		}
 	}
-	else if(n>m){
-		var aat = matrix_multiply(a,at);
-		var aati = numeric.inv(aat);
-		return matrix_multiply(at, aati);
+	else if (transposeJacobian==true) {
+		return matrix_transpose(jacobian)
 	}
-	else{
-		return numeric.inv(jacobian);
-	}
-	//if you want to to do transpose
-	// return matrix_transpose(jacobian)
+	
 
 }
 

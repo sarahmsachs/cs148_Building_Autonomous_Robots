@@ -106,10 +106,10 @@ function robot_collision_forward_kinematics (q) {
 function traverse_collision_forward_kinematics_link(link,mstack,q) {
 
     // test collision by transforming obstacles in world to link space
-    mstack_inv = matrix_invert_affine(mstack);
-/*
+    // mstack_inv = matrix_invert_affine(mstack); //SARAH COMMENTED THIS OUT
+
     mstack_inv = numeric.inv(mstack);
-*/
+
 
     var i;
     var j;
