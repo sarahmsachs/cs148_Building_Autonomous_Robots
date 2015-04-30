@@ -180,35 +180,17 @@ function new_config(q, qnear, qnew){ //according to paper, this makes a motion t
         // console.log("Arrived, less than one step away");
         return !robot_collision_test(q);
     }
+    diff = Array.apply(null, new Array(11)).map(Number.prototype.valueOf,0);
     else { //move towards nearest neighbor
-        // console.log(qnear)
-        diffX= q[0]-qnear[0]; //how far qnear is from q
-        diffY= q[2]-qnear[2]; //this should
-        directionVector = vector_normalize([diffX,diffY]);
-        // console.log("           Directoin vector is"+directionVector);
-        // console.log("           diffx is"+diffX);
-        // console.log("diff y is " +diffY)
-        // console.log("           q is"+q);
-        // console.log("           qnear is"+qnear);
-        stepVector = [directionVector[0]*eps, directionVector[1]*eps] //this is the direction of the next step to q from qnear
-        qnew = qnear;
-        qnew[0]=qnear[0]+stepVector[0];
-        qnew[2]= qnear[2]+stepVector[1];
-        // qnew = [qnear[0]+stepVector[0],0, qnear[2]+stepVector[1],0, qnear[4]];
-        // for (i = 6; i<11; i++){
-        //     qnew.push(randomAngle());
-        // }
-        // newConfig = qnew;
-        // newConfig = [qnew[0], 0, qnew[2],0,randomAngle(),0]
-        // for (var i=0; i<6; i++){
-        //     newAngle = randomAngle()
-        //     newConfig.push(newAngle);
-        // }
-
-        // newConfig.vertex = newConfig;
-        // qnew = newConfig;
-        // qnew.vertex = newConfig; //I added this
-        // console.log("The q is: "+q+", the qnear is: "+qnear+", qnew is: "+qnew)
+        for (var i = 0; i<11; i++){
+            diff[i] = q[i]-qnear[i];
+        }
+        directionVector = vector_normalize(diff);
+        for (var i = 0; i<11; i++){
+            directionVector[i] = directionVector[i]*eps;
+        }
+        qnew = qnear+directionVector
+        console.log("The q is: "+q+", the qnear is: "+qnear+", qnew is: "+qnew)
         return !robot_collision_test(qnew);
     }
 
@@ -333,24 +315,4 @@ function sameVertex(v1, v2){ //simple check that coordinates of both vertices ar
     }
     return true;
 }
-
-
-
-// function vertex_converter(oldvert){
-//     var v = new Object();
-//     var vertex = [0,0,0,0,0,0];
-//     vertex[4] = oldvert.angle;
-//     vertex[0] = oldvert[0];
-//     vertex[2] = oldvert[1];
-
-//     for (var i = 0; i<oldvert.jointangles.length; i++){
-//         vertex.push(oldvert.jointangles[i]);
-//     }
-
-//     v.vertex = vertex;
-//     v.geom = oldvert.geom;
-
-//     return v;
-// }
-
 
