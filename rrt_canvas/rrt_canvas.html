@@ -30,12 +30,15 @@
 <html>
 
 <body onload="init()">
-
+    <canvas id="myCanvas" width=800 height=800
+    style="z-index: 10 ;border:1px solid #000000;">
+</canvas> 
 <!-- //////////////////////////////////////////////////
      /////     JAVASCRIPT INCLUDES
      ////////////////////////////////////////////////// -->
+     <script src="3jsbot_matrix.js"></script> 
 
-<script>
+     <script>
 
 //////////////////////////////////////////////////
 /////     MAIN FUNCTION CALLS
@@ -83,9 +86,12 @@ function init() {
 
     // make sure the rrt iterations are not running faster than animation update
     cur_time = Date.now();
+        t1 = tree_init(q_start_config); //I added
+        t2 = tree_init(q_goal_config);
+        iterationCount = 0;
 
 
-}
+    }
 
 
 //////////////////////////////////////////////////
@@ -98,25 +104,321 @@ function animate() {
     // this effectively request that the animate function be called again for next draw
     // http://learningwebgl.com/blog/?p=3189
     requestAnimationFrame( animate );
-
+    // console.log("animating")
     draw_robot_world();
 
     // specify rrt algorithm to use for planning
     rrt_alg = 1;  // 0: basic rrt, 1: rrt_connect
+    eps = .2;
+
+    // x_min = range[0][0];
+    // x_max = range[1][0];
+    // y_min = range[0][1];
+    // y_max = range[1][1];
 
     // make sure the rrt iterations are not running faster than animation update
     if (rrt_iterate && (Date.now()-cur_time > 10)) {
 
         //rrt_planning_iteration();
+        qrand = random_config();
+        if (rrt_extend(t1, qrand)!='trapped'){
+            if (rrt_connect(t2, qnew)=='reached'){
+                tree_add_edge(t1.newest, t2.newest, t2)
+                // console.log('reached')
+                rrt_iterate=false;
+                console.log("about to call find path")
+                return find_path(t1, t2);
+            }
+        }
+        //otherwise swithch trees;
+        temp = t1;
+        t1= t2;
+        t2=temp;
+        iterationCount++;
+        if (iterationCount>10000){//if over 10k iterations
+            console.log("took to long")
+            rrt_iterate = false; //you are done, took too long
+        } 
+
+
 
         // update time marker for last iteration update
         cur_time = Date.now();
 
-   }
+    }
 
 }
 
 
+function tree_init(q) {
+
+    // create tree object
+    var tree = {};
+
+    // initialize with vertex for given configuration
+    tree.vertices = [];
+    tree.vertices[0] = {};
+    tree.vertices[0].edges = [];
+    tree.vertices[0].vertex = q
+    tree_add_vertex(tree.vertices[0], tree) //just added this
+    // create rendering geometry for base location of vertex configuration
+    draw_2D_configuration(tree.vertices[0].vertex);
+
+    // maintain index of newest vertex added to tree
+    tree.newest = tree.vertices[0];
+    tree.root = tree.vertices[0]; //this is the center of the tree
+
+    return tree;
+}
+
+function tree_add_vertex (vertex, myTree){
+
+    vertex.visited = false;
+    // console.log("about to add vertex")
+    // console.log(vertex)
+    // console.log("tree.vertices is")
+    // console.log(tree.vertices);
+    myTree.vertices.push(vertex);
+    // console.log("after add vertex")
+    // console.log(tree.vertices)
+    draw_2D_configuration(vertex.vertex);
+    myTree.newest = vertex
+        // add_config_origin_indicator_geom(vertex);
+
+
+    // console.log('successful add vertex')
+}
+function tree_add_edge(vertexA, vertexB, tree){
+    // var newEdge = new Object();
+
+    if ((vertexA.vertex==[0,0])|vertexB.vertex==[0,0])
+        console.log("adding to root")
+    var newEdge = {};
+    vertexA.edges.push(vertexB);
+    vertexB.edges.push(vertexA);
+    newEdge.vertexA = vertexA;
+    newEdge.vertexB = vertexB;
+    draw_2D_edge_configurations(vertexA.vertex, vertexB.vertex);
+    //maybe make some array of things you are connected to, add here
+}
+
+function random_config(){
+    //we know that a config is eleven long. it's xyzrpy and then the angles for the five joints of the robot
+    //and we are given the following instructions
+    // // the robot base does not move outside the X-Z plane. Specifically, the base should not translate along the Y axis, and should not rotate about the X and Z axes.
+    // randomArray = [0,0,0,0,0,0,0,0,0,0,0]
+    // randomArray[0] = randomInRange(x_min,x_max); //x coordinate plane
+    // randomArray[2] = randomInRange(y_min,y_max); //technically the z coordinate plane. we don't touch y
+    // randomArray[4] = randomAngle(); //angle;
+    // for (var joint = 6; joint<11; joint++){ //set all the other joints to have random angles
+    //     var newRandomAngle = randomAngle()
+    //     randomArray[joint] = newRandomAngle;
+    // }
+    // //unclear if this should be making a new vertex or have made a new vertex along the way
+    randomArray = [0,0];
+    randomArray[0] = randomInRange(x_min,x_max); //x coordinate plane
+    randomArray[1] = randomInRange(y_min,y_max); //technically the z coordinate plane. we don't touch y
+    return randomArray;
+}
+
+
+function new_config(q, qnear, qnew){ //according to paper, this makes a motion toward q with some fixed incremental distance , and tests for collision.
+
+        diff = [0,0]
+        for (var i = 0; i<2; i++){
+            diff[i] = q[i]-qnear[i];
+        }
+        directionVector = vector_normalize(diff);
+        for (var i = 0; i<2; i++){
+            directionVector[i] = directionVector[i]*eps;
+        }
+        for (var i = 0; i<2; i++){
+            qnew[i] = qnear[i]+directionVector[i];
+        }
+        return !collision_test(qnew);
+    // }
+
+}
+
+function nearest_neighbor(vertexConfig, tree){//simple argmin calculation
+    var closestDist = Number.MAX_VALUE;
+    var closestV = tree.vertices[0]; //this is arbitrary, if nothing, i guess just set neighbor to be yourself
+    // console.log(tree.vertices.length)
+    for (var v=0; v<tree.vertices.length; v++){
+        var newVertex = tree.vertices[v];
+        // console.log(newVertex)
+        var newDist = getDistance(newVertex.vertex, vertexConfig);
+        if (newDist<closestDist){
+            // console.log("returned new vertex")
+            closestDist = newDist;
+            closestV = newVertex;
+        }
+    }
+    return closestV;
+}
+
+function rrt_extend(tree, q){ //straight from psuedocode from paper
+    // console.log(q)
+    qnearV = nearest_neighbor(q, tree);
+    if (qnearV.vertex==[0,0]){
+        console.log("qnear problem")
+    }
+    // console.log(qnear)
+    qnew = [0,0]
+    if (new_config(q, qnearV.vertex, qnew)){
+        // console.log("aboutto add edges")
+        qNewVertex={};
+        qNewVertex.vertex = qnew;
+        // if (getDistance(q, qnew)<eps){
+        //     qNewVertex.vertex = q;
+        // }
+        qNewVertex.edges=[]
+        // console.log(qnew)
+        tree_add_vertex(qNewVertex, tree);
+        tree_add_edge(qnearV, qNewVertex, tree); //changed from qnew and qnear
+        if (getDistance(q, qnew)<eps){ //changed to same vertex of q
+            return 'reached';
+        }   
+        else{
+            // console.log('advanced')
+            return 'advanced';
+        }
+    }
+    return 'trapped';
+}
+
+function rrt_connect(tree, q){
+    // console.log(q.vertex)
+    var state = rrt_extend(tree, q) //start off as a state
+    while (state=='advanced'){
+        state = rrt_extend(tree, q);
+    }
+    return state; //basically until trapped for reached
+}
+
+function find_path(t1, t2){
+    console.log("finding path")
+    // var startV = t1.root;
+    // startV.visited = true; //this will be helpful for dfs
+    // robot_path = [startV] //starts as just an array with start
+    pathSuccessfullyFound = path_dfs(t1.root, t2.root);
+    console.log(pathSuccessfullyFound)
+    if (pathSuccessfullyFound==true){
+        console.log("got to inside")
+        robot_path=[]
+        var tempV = t2.root;
+        while (tempV != t1.root){
+            robot_path.push(tempV);
+            tempV = tempV.prev;
+        }
+        robot_path.push(t1.root);
+        robot_path.reverse()
+    // // robot_path = myPath;
+    // for (var i =0; i<robot_path.length; i++){
+    //     robot_path[i].geom.material.color = {r:1,g:0,b:0};
+    //     // console.log('colored path at index '+i);
+    // }
+    draw_highlighted_path(robot_path);
+}
+
+    // console.log(robot_path)
+    return pathSuccessfullyFound;
+}
+
+function path_dfs(start, end){
+    console.log("dfs called")
+    if (start == end){
+        console.log("same vertex")
+        return true;
+    }
+    else{
+        console.log(start.vertex)
+        console.log(end.vertex)
+        start.visited = true;
+        for (var i = 0; i<start.edges.length; i++){
+            var next = start.edges[i];
+            // var next;
+            // // if (edge.vertexA.visited== true)
+            // //     next  = edge.vertexB;
+            // // else{
+            // //     next = edge.vertexA;
+            // // }
+            // if (sameVertex(edge.vertexA.vertex,start.vertex)){
+            //     next = edge.vertexB;
+            // }
+            // else {
+            //     next = edge.vertexA;
+            // }
+            if (next.visited ==false){
+                next.prev = start;
+                if (path_dfs(next, end)){
+                    return true;
+                }
+            }
+        }    
+        return false;
+    }
+    // return false;
+    
+    // for (var i = 0; i<start.edges.length; i++){
+    //     var edge = start.edges[i];
+    //     if (edge.vertexA==start){
+    //         next = edge.vertexB;
+    //     }
+    //     else{
+    //         next = edge.vertexA;
+    //     }
+
+    //     if (next.visited==true){
+    //         continue; // we don't care about visited ones in dfs
+    //     }
+    //     robot_path.push(next)
+    //     next.visited = true;
+    //     if (sameVertex(next.vertex, end.vertex)){
+    //         return true;
+    //     }
+    //     if (path_dfs(next, end)){
+    //         // console.log('called more dfs')
+    //         return true;
+    //     }
+    //     else {
+    //         robot_path.pop() //get rid of it if it doesn't have a dfs, its not part of our path
+    //     }
+    // }
+    // return false; //if dfs doesn't work
+}
+
+
+function randomAngle(){
+    var newAngle = randomInRange(0, 2*Math.PI);
+    return newAngle
+}
+function randomInRange(min, max) { 
+    var randomNumUnshifted = (max - min)*Math.random();
+    return (min + randomNumUnshifted);
+}
+
+function getDistance(vertexA, vertexB){
+    var vAx, vAy,vBx, vBy;
+    vAx= vertexA[0]
+    vAy= vertexA[1]
+    vBx=vertexB[0]
+    vBy= vertexB[1]
+    return Math.sqrt(Math.pow((vBx-vAx),2)+Math.pow((vBy-vAy),2)); //Euclidean distance formula
+}
+
+function sameVertex(v1, v2){ //simple check that coordinates of both vertices are the same
+    var vertex1 = v1;
+    var vertex2 = v2;
+    // var vertex1 = v1.vertex;
+    // var vertex2 = v2.vertex;
+    for (var i = 0; i<2; i++){
+        if (vertex1[i]!=vertex2[i]){
+            return false;
+        }
+    }
+    return true;
+}
 //////////////////////////////////////////////////
 /////     CANVAS DRAWING SUPPORT ROUTINES
 //////////////////////////////////////////////////
@@ -136,11 +438,12 @@ function draw_robot_world() {
         ctx.fillStyle = "#FF0000";
         ctx.fillRect((range[j][0][0]*100+200),(range[j][1][0]*100+200),(range[j][0][1]-range[j][0][0])*100,(range[j][1][1]-range[j][1][0])*100);
     }
- 
+
 }
 
 function draw_2D_configuration(q) {
     // draw location of 2D configuration on canvas
+    // console.log("drawing")
     c = document.getElementById("myCanvas");
     ctx = c.getContext("2d");
     ctx.fillStyle = "#8888AA";
@@ -149,6 +452,8 @@ function draw_2D_configuration(q) {
 
 function draw_2D_edge_configurations(q1,q2) {
     // draw line between locations of two 2D configurations on canvas
+    // console.log(q1)
+    // console.log(q2)
     c = document.getElementById("myCanvas");
     ctx = c.getContext("2d");
     ctx.beginPath();
@@ -184,32 +489,39 @@ function set_planning_scene() {
     range[2] = [ [-1.1,-1],[-1.1,5.1] ];
     range[3] = [ [5,5.1],[-1.1,5.1] ];
 
+
+    //sarah added
+    x_min = -1.1;
+    x_max = 5;
+    y_min = -1;
+    y_max = 5.1
+
 /*  misc stuff with narrow opening
 */
-    range[4] = [ [1,2],[1,2] ];
-    range[5] = [ [3,3.3],[1,4] ];
-    range[6] = [ [0.6,0.7],[0.4,0.7] ];
-    range[7] = [ [3.7,3.9],[-0.8,5] ];
+range[4] = [ [1,2],[1,2] ];
+range[5] = [ [3,3.3],[1,4] ];
+range[6] = [ [0.6,0.7],[0.4,0.7] ];
+range[7] = [ [3.7,3.9],[-0.8,5] ];
 
 /*  narrow path 1
     range[4] = [ [1,3],[4,5] ];
     range[5] = [ [1,3],[-1,2] ];
     range[6] = [ [1,1.95],[2,3.8] ];
-*/
+    */
 
 /*  narrow path 2
     range[4] = [ [1,3],[4,5] ];
     range[5] = [ [1,3],[-1,2] ];
     range[6] = [ [1,1.9],[2,3.8] ];
     range[7] = [ [2.1,3],[2.2,4] ];
-*/
+    */
 
 /*  three compartments
     range[4] = [ [1,1.3],[4,5] ];
     range[5] = [ [1,1.3],[-1,3.5] ];
     range[6] = [ [2.7,3],[-1,0] ];
     range[7] = [ [2.7,3],[.5,5] ];
-*/
+    */
 
 }
 
@@ -224,11 +536,12 @@ function collision_test(q) {
         var in_collision = true; 
 
         // no collision detected, if configuration is outside obstacle along any dimension
+    
         for (i=0;i<q.length;i++) { 
             if ((q[i]<range[j][i][0])||(q[i]>range[j][i][1]))
                 in_collision = false;
         }
-    
+
         // return collision, if configuration inside obstacle extents along all dimensions
         if (in_collision)
             return true;
@@ -241,9 +554,7 @@ function collision_test(q) {
 
 </script>
 
-<canvas id="myCanvas" width=800 height=800
-style="z-index: 10 ;border:1px solid #000000;">
-</canvas> 
+
 
 </body>
 </html>

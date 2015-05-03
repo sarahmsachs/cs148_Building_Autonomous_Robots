@@ -95,12 +95,3 @@ function generate_rotation_matrix_Z(theta){
 				[0,0,0,1]
 				]
 }
-
-
-function generate_rotation_matrix(r,p,y){
-	var rotationMat = generate_rotation_matrix_X(r);
-	rotationMat = matrix_multiply(rotationMat, generate_rotation_matrix_Y(p));
-	rotationMat = matrix_multiply(rotationMat,generate_rotation_matrix_Z(y));
-	return rotationMat;
-}
-

@@ -23,8 +23,12 @@ function robot_apply_controls() {
     robot.origin.rpy[0] += robot.control.rpy[0];
     robot.origin.rpy[1] += robot.control.rpy[1];
     robot.origin.rpy[2] += robot.control.rpy[2];
-    robot.control.xyz = [0,0,0]; //zero controls
-    robot.control.rpy = [0,0,0];
+    robot.control.xyz[0] = 0; //zero controls
+    robot.control.xyz[1] = 0; //zero controls
+    robot.control.xyz[2] = 0; //zero controls
+    robot.control.rpy[0]=0;
+    robot.control.rpy[1]=0;
+    robot.control.rpy[2]=0;
     for (x in robot.joints) {
     	robot.joints[x].angle += robot.joints[x].control; //apply to angle
         //ADDED FOR REGRADE

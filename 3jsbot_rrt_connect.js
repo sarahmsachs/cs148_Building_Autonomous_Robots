@@ -52,17 +52,22 @@ function robot_rrt_planner_init() {
     // CS148: add necessary RRT initialization here
     rrt_iterate = true;
     eps = 1; //initialize as epsilon = 1, can play around with later
-    x_min = robot_boundary[0][0];
-    x_max = robot_boundary[1][0];
-    y_min = robot_boundary[0][2];
-    y_max = robot_boundary[1][2];
+    // x_min = robot_boundary[0][0];
+    // x_max = robot_boundary[1][0];
+    // y_min = robot_boundary[0][2];
+    // y_max = robot_boundary[1][2];
+    x_min = -100;
+    x_max = 100;
+    y_min = -100;
+    y_max = 100;
     t1 = tree_init(q_start_config);
     t2 = tree_init(q_goal_config);
     iterationCount = 0;
     // make sure the rrt iterations are not running faster than animation update
     cur_time = Date.now();
+    robot_path_traverse_idx = 0;
 
-    console.log("planner initialized");
+    // console.log("planner initialized");
 }
 
 
@@ -77,6 +82,10 @@ function robot_rrt_planner_iterate() {
         qrand = random_config();
         if (rrt_extend(t1, qrand)!='trapped'){
             if (rrt_connect(t2, qnew)=='reached'){
+                tree_add_edge(t1.newest, t2.newest, t2)
+                // console.log('reached')
+                rrt_iterate=false;
+                // console.log("about to call find path")
                 return find_path(t1, t2);
             }
         }
@@ -85,9 +94,11 @@ function robot_rrt_planner_iterate() {
         t1= t2;
         t2=temp;
         iterationCount++;
-        if (iterationCount>100){//if over 10k iterations
-            rrt_iterate = false; //you are done, took too long
-        } 
+        // if (iterationCount>10000){//if over 10k iterations
+        //     console.log("took to long")
+        //     rrt_iterate = false; //you are done, took too long
+        // } 
+
     }
 
     // return path not currently found
@@ -102,14 +113,14 @@ function tree_init(q) {
     // initialize with vertex for given configuration
     tree.vertices = [];
     tree.vertices[0] = {};
-    tree.vertices[0].vertex = q;
     tree.vertices[0].edges = [];
-    console.log("about to add config origin")
+    tree.vertices[0].vertex = q
+    tree_add_vertex(tree.vertices[0], tree) //just added this
     // create rendering geometry for base location of vertex configuration
     add_config_origin_indicator_geom(tree.vertices[0]);
 
-    // maintain index of newest vertex added to tree
-    tree.newest = 0;
+   // maintain index of newest vertex added to tree
+    tree.newest = tree.vertices[0];
     tree.root = tree.vertices[0]; //this is the center of the tree
 
     return tree;
@@ -133,15 +144,17 @@ function add_config_origin_indicator_geom(vertex) {
     vertex.geom = temp_mesh;
 }
 
-function tree_add_vertex (vertex, tree){
-    // a={};
-    // a.vertex = vertex;
-    // console.log(a.vertex)
-    // a.edges=[]
+function tree_add_vertex (vertex, myTree){
     vertex.visited = false;
-    tree.vertices.push(vertex);
-    add_config_origin_indicator_geom(vertex);
-    tree.newest++;
+    // console.log("about to add vertex")
+    // console.log(vertex)
+    // console.log("tree.vertices is")
+    // console.log(tree.vertices);
+    myTree.vertices.push(vertex);
+    // console.log("after add vertex")
+    // console.log(tree.vertices)
+    add_config_origin_indicator_geom(vertex)
+    myTree.newest = vertex
         // add_config_origin_indicator_geom(vertex);
 
 
@@ -149,11 +162,15 @@ function tree_add_vertex (vertex, tree){
 }
 function tree_add_edge(vertexA, vertexB, tree){
     // var newEdge = new Object();
-    var newEdge = {};
-    vertexA.edges.push(newEdge);
-    vertexB.edges.push(newEdge);
+
+    
+        // console.log("adding to root")
+    newEdge = {};
+    vertexA.edges.push(vertexB);
+    vertexB.edges.push(vertexA);
     newEdge.vertexA = vertexA;
     newEdge.vertexB = vertexB;
+    // draw_2D_edge_configurations(vertexA.vertex, vertexB.vertex);
     //maybe make some array of things you are connected to, add here
 }
 
@@ -161,8 +178,7 @@ function random_config(){
     //we know that a config is eleven long. it's xyzrpy and then the angles for the five joints of the robot
     //and we are given the following instructions
     // the robot base does not move outside the X-Z plane. Specifically, the base should not translate along the Y axis, and should not rotate about the X and Z axes.
-    
-    randomArray = Array.apply(null, new Array(11)).map(Number.prototype.valueOf,0); //make an array of 11 zeros
+    randomArray = [0,0,0,0,0,0,0,0,0,0,0]
     randomArray[0] = randomInRange(x_min,x_max); //x coordinate plane
     randomArray[2] = randomInRange(y_min,y_max); //technically the z coordinate plane. we don't touch y
     randomArray[4] = randomAngle(); //angle;
@@ -171,17 +187,13 @@ function random_config(){
         randomArray[joint] = newRandomAngle;
     }
     //unclear if this should be making a new vertex or have made a new vertex along the way
-    // randomArray.vertex = randomArray;
+ 
     return randomArray;
 }
 
 function new_config(q, qnear, qnew){ //according to paper, this makes a motion toward q with some fixed incremental distance , and tests for collision.
-    if (getDistance(q, qnear)<=eps){ //if less than one step away
-        // console.log("Arrived, less than one step away");
-        return !robot_collision_test(q);
-    }
-    diff = Array.apply(null, new Array(11)).map(Number.prototype.valueOf,0);
-    else { //move towards nearest neighbor
+
+        diff = [0,0,0,0,0,0,0,0,0,0,0]
         for (var i = 0; i<11; i++){
             diff[i] = q[i]-qnear[i];
         }
@@ -189,19 +201,23 @@ function new_config(q, qnear, qnew){ //according to paper, this makes a motion t
         for (var i = 0; i<11; i++){
             directionVector[i] = directionVector[i]*eps;
         }
-        qnew = qnear+directionVector
-        console.log("The q is: "+q+", the qnear is: "+qnear+", qnew is: "+qnew)
+        for (var i = 0; i<11; i++){
+            qnew[i] = qnear[i]+directionVector[i];
+        }
         return !robot_collision_test(qnew);
-    }
+    
 
 }
-function nearest_neighbor(vertex, tree){//simple argmin calculation
-    var closestDist = Number.MAX_VALUE
-    var closestV = vertex //this is arbitrary, if nothing, i guess just set neighbor to be yourself
+function nearest_neighbor(vertexConfig, tree){//simple argmin calculation
+   var closestDist = Number.MAX_VALUE;
+    var closestV = tree.vertices[0]; //this is arbitrary, if nothing, i guess just set neighbor to be yourself
+    // console.log(tree.vertices.length)
     for (var v=0; v<tree.vertices.length; v++){
-        var newVertex = tree.vertices[v].vertex;
-        var newDist = getDistance(newVertex, vertex);
+        var newVertex = tree.vertices[v];
+        // console.log(newVertex)
+        var newDist = getDistance(newVertex.vertex, vertexConfig);
         if (newDist<closestDist){
+            // console.log("returned new vertex")
             closestDist = newDist;
             closestV = newVertex;
         }
@@ -210,32 +226,33 @@ function nearest_neighbor(vertex, tree){//simple argmin calculation
 }
 
 function rrt_extend(tree, q){ //straight from psuedocode from paper
-    qnear = nearest_neighbor(q, tree);
-    qnew = Array.apply(null, new Array(11)).map(Number.prototype.valueOf,0);
-    if (new_config(q, qnear, qnew)){
+    qnearV = nearest_neighbor(q, tree);
+    qnew = [0,0,0,0,0,0,0,0,0,0,0]
+    if (new_config(q, qnearV.vertex, qnew)){
+        // console.log("aboutto add edges")
         qNewVertex={};
         qNewVertex.vertex = qnew;
+        // if (getDistance(q, qnew)<eps){
+        //     qNewVertex.vertex = q;
+        // }
         qNewVertex.edges=[]
-        // tree_add_vertex(qnew, tree);
+        // console.log(qnew)
         tree_add_vertex(qNewVertex, tree);
-        // vA = {};
-        // vA.vertex = qnear
-        // vA.
-        qNearVertex={};
-        qNearVertex.vertex = qnew;
-        qNearVertex.edges=[]
-        tree_add_edge(qNearVertex, qNewVertex, tree); //changed from qnew and qnear
-        if (sameVertex(qNearVertex, qNewVertex)){
+        tree_add_edge(qnearV, qNewVertex, tree); //changed from qnew and qnear
+        if (hasReached(q, qnew)){ //changed to same vertex of q
             return 'reached';
         }   
         else{
+            // console.log('advanced')
             return 'advanced';
         }
     }
     return 'trapped';
 }
 
+
 function rrt_connect(tree, q){
+    // console.log(q.vertex)
     var state = rrt_extend(tree, q) //start off as a state
     while (state=='advanced'){
         state = rrt_extend(tree, q);
@@ -244,45 +261,71 @@ function rrt_connect(tree, q){
 }
 
 function find_path(t1, t2){
-    var startV = t1.root;
-    startV.visited = true; //this will be helpful for dfs
-    var robot_path = [startV] //starts as just an array with start
-    pathSuccessfullyFound = path_dfs(startV, t2.root);
-    // robot_path = myPath;
+    // console.log("finding path")
+    // var startV = t1.root;
+    // startV.visited = true; //this will be helpful for dfs
+    // robot_path = [startV] //starts as just an array with start
+    pathSuccessfullyFound = path_dfs(t1.root, t2.root);
+    // console.log(pathSuccessfullyFound)
+    if (pathSuccessfullyFound==true){
+        // console.log("got to inside")
+        robot_path=[]
+        var tempV = t2.root;
+        while (tempV != t1.root){
+            robot_path.push(tempV);
+            tempV = tempV.prev;
+        }
+        robot_path.push(t1.root);
+        if (!sameVertex(t2.root,q_goal_config)){
+            // console.log("swapped");
+            robot_path = robot_path.reverse()
+        }
+        
+    // // robot_path = myPath;
     for (var i =0; i<robot_path.length; i++){
         robot_path[i].geom.material.color = {r:1,g:0,b:0};
-        console.log('colored path at index '+i);
+        // console.log('colored path at index '+i);
     }
-    console.log(robot_path)
+    // draw_highlighted_path(robot_path);
+}
+
+    // console.log(robot_path)
     return pathSuccessfullyFound;
 }
-function path_dfs(start, end){
-    for (var i = 0; i<start.edges.length; i++){
-        var edge = start.edges[i];
-        if (edge.vertexA==start){
-            next = edge.vertexB;
-        }
-        else{
-            next = edge.vertexA;
-        }
 
-        if (next.visited==true){
-            continue; // we don't care about visited ones in dfs
-        }
-        robot_path.push(next)
-        next.visited = true;
-        if (sameVertex(next, end)){
-            return true;
-        }
-        if (path_dfs(next, end)){
-            console.log('called more dfs')
-            return true;
-        }
-        else {
-            robot_path.pop() //get rid of it if it doesn't have a dfs, its not part of our path
-        }
+function path_dfs(start, end){
+    // console.log("dfs called")
+    if (start == end){
+        // console.log("same vertex")
+        return true;
     }
-    return false; //if dfs doesn't work
+    else{
+        // console.log(start.vertex)
+        // console.log(end.vertex)
+        start.visited = true;
+        for (var i = 0; i<start.edges.length; i++){
+            var next = start.edges[i];
+            // var next;
+            // // if (edge.vertexA.visited== true)
+            // //     next  = edge.vertexB;
+            // // else{
+            // //     next = edge.vertexA;
+            // // }
+            // if (sameVertex(edge.vertexA.vertex,start.vertex)){
+            //     next = edge.vertexB;
+            // }
+            // else {
+            //     next = edge.vertexA;
+            // }
+            if (next.visited ==false){
+                next.prev = start;
+                if (path_dfs(next, end)){
+                    return true;
+                }
+            }
+        }    
+        return false;
+    }
 }
 
 
@@ -296,18 +339,27 @@ function randomInRange(min, max) {
     return (min + randomNumUnshifted);
 }
 
+function hasReached(vertexA, vertexB){
+    for (var i=0; i<11; i++){
+        if (Math.abs(vertexA[i]-vertexB[i])>eps){
+            return false
+        }
+    }
+    return true;
+}
 function getDistance(vertexA, vertexB){
     var vAx, vAy,vBx, vBy;
     vAx= vertexA[0]
-    vAy= vertexA[1]
+    vAy= vertexA[2]
     vBx=vertexB[0]
-    vBy= vertexB[1]
+    vBy= vertexB[2]
     return Math.sqrt(Math.pow((vBx-vAx),2)+Math.pow((vBy-vAy),2)); //Euclidean distance formula
 }
-
 function sameVertex(v1, v2){ //simple check that coordinates of both vertices are the same
-    var vertex1 = v1.vertex;
-    var vertex2 = v2.vertex;
+    var vertex1 = v1;
+    var vertex2 = v2;
+    // var vertex1 = v1.vertex;
+    // var vertex2 = v2.vertex;
     for (var i = 0; i<11; i++){
         if (vertex1[i]!=vertex2[i]){
             return false;

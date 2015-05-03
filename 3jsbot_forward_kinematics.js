@@ -23,6 +23,14 @@ compute_and_draw_heading
 function robot_forward_kinematics(){
 	order = Array();
 	xforms = Array();
+	// var robotXform = generate_translation_matrix(robot.origin.xyz);
+	// robotXform  = matrix_multiply(robotXform ,generate_rotation_matrix_X(robot.origin.rpy[0]));
+	// robotXform  = matrix_multiply(robotXform ,generate_rotation_matrix_Y(robot.origin.rpy[1]));
+	// robotXform  = matrix_multiply(robotXform ,generate_rotation_matrix_Z(robot.origin.rpy[2]));
+
+	robot.origin.xform = getOriginXform();
+
+	robot.links[robot.base].xform = robot.origin.xform;
 	traverse_forward_kinematics_link(robot, robot.links[robot.base]);
 }
 function traverse_forward_kinematics_link(robot, link){
@@ -48,19 +56,13 @@ function traverse_forward_kinematics_joint(robot, joint){
 	joint.xform = matrix_multiply(joint.origin.xform, generate_identity());
 	var tempmat = matrix_2Darray_to_threejs(joint.xform);
     simpleApplyMatrix(joint.geom,tempmat);
-	compute_and_draw_heading(joint);
+	// compute_and_draw_heading(joint);
 	traverse_forward_kinematics_link(robot, robot.links[joint.child]);//I traverse on child
+	compute_and_draw_heading(joint);
 }
 
+
 function compute_and_draw_heading(object){
-	heading_local = [[1],[0],[0],[1]];
-	lateral_local = [[0],[0],[1],[1]];
-	var headingProduct = matrix_multiply(robot.links[robot.base].xform, heading_local);
-	var lateralProduct = matrix_multiply(robot.links[robot.base].xform, lateral_local);
-	robot_heading = generate_translation_matrix(headingProduct[0], headingProduct[1], headingProduct[2]);
-	robot_lateral = generate_translation_matrix(lateralProduct[0], lateralProduct[1], lateralProduct[2]);
-	var heading_mat = matrix_2Darray_to_threejs(robot_heading);
-	var lateral_mat = matrix_2Darray_to_threejs(robot_lateral);
 	if (typeof heading_geom === 'undefined') {
 		var temp_geom = new THREE.CubeGeometry(0.3, 0.3, 0.3);
         var temp_material = new THREE.MeshBasicMaterial( {color: 0x00ffff} )
@@ -73,6 +75,20 @@ function compute_and_draw_heading(object){
     	lateral_geom = new THREE.Mesh(temp_geom, temp_material);
     	scene.add(lateral_geom);
         }
+
+	var lateral_local = [[1],[0],[0],[1]];
+	var heading_local = [[0],[0],[1],[1]];
+	// console.log(robot.origin.xform)
+	robot_heading = matrix_multiply(robot.origin.xform, heading_local);
+	// console.log(robot_heading)
+	robot_heading_trans = generate_translation_matrix(robot_heading[0][0], robot_heading[1][0], robot_heading[2][0]);
+	// robot_heading_trans = matrix_multiply(robot_heading_trans,generate_rotation_matrix(robot.origin.rpy[0],robot.origin.rpy[1],robot.origin.rpy[2]));
+	robot_lateral = matrix_multiply(robot.origin.xform, lateral_local);
+	robot_lateral_trans= generate_translation_matrix(robot_lateral[0][0], robot_lateral[1][0], robot_lateral[2][0]);
+	// robot_lateral_trans = matrix_multiply(robot_lateral_trans,generate_rotation_matrix(robot.origin.rpy[0],robot.origin.rpy[1],robot.origin.rpy[2]));
+	var heading_mat = matrix_2Darray_to_threejs(robot_heading_trans);
+	var lateral_mat = matrix_2Darray_to_threejs(robot_lateral_trans);
+	
 
     simpleApplyMatrix(heading_geom,heading_mat);
     simpleApplyMatrix(lateral_geom,lateral_mat);

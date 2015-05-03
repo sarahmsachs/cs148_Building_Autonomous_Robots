@@ -83,7 +83,7 @@ function robot_iscollision() {
 
 function robot_collision_test(q) {
     // perform collision test of robot geometry against planning world 
-
+    // console.log("robot collision test q " + q) //this is always valid
     // test base origin (not extents) against world boundary extents
     if ((q[0]<robot_boundary[0][0])||(q[0]>robot_boundary[1][0])||(q[2]<robot_boundary[0][2])||(q[2]>robot_boundary[1][2]))
         return true;
@@ -94,10 +94,21 @@ function robot_collision_test(q) {
 
 
 function robot_collision_forward_kinematics (q) { 
-
+    // console.log(q)
+    if (typeof(q)=='string'){
+        console.log(q)
+    }
     // transform robot base into the global world coordinates
-    var mstack = matrix_multiply(generate_translation_matrix(q[0],q[1],q[2]),matrix_multiply(matrix_multiply(generate_rotation_matrix_Z(q[5]),generate_rotation_matrix_Y(q[4])),generate_rotation_matrix_X(q[3])));
+    // console.log("translation q012 " +generate_translation_matrix(q[0],q[1],q[2]));
+    // console.log("rotation z" +generate_rotation_matrix_Z(q[5]));
+    // console.log("rotation y" + generate_rotation_matrix_Y(q[4]));
+    // console.log("q in collision" + q)
+    
+    // console.log("rotation x")
+    // console.log(generate_rotation_matrix_X(q[3]));
 
+    var mstack = matrix_multiply(generate_translation_matrix(q[0],q[1],q[2]),matrix_multiply(matrix_multiply(generate_rotation_matrix_Z(q[5]),generate_rotation_matrix_Y(q[4])),generate_rotation_matrix_X(q[3])));
+    // console.log("mastack before traverse collition" + mstack)
     // recurse kinematics, testing collisions at each link
     return traverse_collision_forward_kinematics_link(robot.links[robot.base],mstack,q);
 }
@@ -107,7 +118,8 @@ function traverse_collision_forward_kinematics_link(link,mstack,q) {
 
     // test collision by transforming obstacles in world to link space
     // mstack_inv = matrix_invert_affine(mstack); //SARAH COMMENTED THIS OUT
-
+    // console.log("mstack" + mstack)
+    // console.log("mtsack after traverse collision" + console.log(mstack))
     mstack_inv = numeric.inv(mstack);
 
 
