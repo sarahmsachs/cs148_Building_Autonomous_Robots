@@ -51,7 +51,7 @@ function robot_rrt_planner_init() {
 
     // CS148: add necessary RRT initialization here
     rrt_iterate = true;
-    eps = 1; //initialize as epsilon = 1, can play around with later
+    eps = .7; //initialize as epsilon = 1, can play around with later
     // x_min = robot_boundary[0][0];
     // x_max = robot_boundary[1][0];
     // y_min = robot_boundary[0][2];
