@@ -200,7 +200,7 @@ function init_robot_joints() {
         //I added this!
         robot.joints[x].angle = 0; //added in assignment 5
         robot.joints[x].control = 0;
-        robot.joints[x].servo = {p_desired:0, gains:0};
+        robot.joints[x].servo = {p_desired:0, gains:0, kp:.2};
         // robot.joints[x].servo.p_desired = 0;
         // robot.joints[x].servo.gains = 0; //GUESSED, UNSURE STILL
 

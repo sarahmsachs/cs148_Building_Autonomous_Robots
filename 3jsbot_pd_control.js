@@ -10,7 +10,7 @@ function robot_pd_control () {
 		//should change for regrade?
 		robot.joints[x].servo.p_desired = curdate.getSeconds()/60*2*Math.PI;
 		// robot.joints[x].control += robot.joints[x].servo.p_desired;
-		robot.joints[x].control += (robot.joints[x].servo.p_desired - robot.joints[x].angle);
+		robot.joints[x].control += robot.joints[x].servo.kp*(robot.joints[x].servo.p_desired - robot.joints[x].angle);
 	}
 }
 
