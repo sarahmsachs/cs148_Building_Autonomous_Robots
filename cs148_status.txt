@@ -13,15 +13,19 @@
  Assignment 4: CHECK
  comment: good work
  
- Assignment 5: DUE
+ Assignment 5: CHECK
  error: base controller is unstable and does not properly respond to user input
  error: joint PD controller incorrect
+ regrade: working
  
- Assignment 6: DUE
+ Assignment 6: CHECK
  error: means to execute Jacobian transpose IK unspecified
+ regrade: working from Assignment-7 branch
  
- Assignment 7: PENDING
+ Assignment 7: CHECK
  
- Assignment 8: PENDING
+ Assignment 8: CHECK
+ 
+ Final grade: A (7/7 assignments completed)
  
 
